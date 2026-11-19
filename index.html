@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#122a27">
+  <title>GeoPortal • Minas Gerais</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://{s}.tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root { color-scheme: light; --ink:#18332f; --muted:#71827d; --line:#e4eae6; --paper:#fff; --canvas:#f3f6f3; --green:#2f7560; --mint:#e6f1eb; }
+    * { box-sizing:border-box; }
+    html, body { height:100%; margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--ink); }
+    body { background:var(--canvas); }
+    .app { height:100%; min-height:520px; display:grid; grid-template-rows:72px 1fr; }
+    header { z-index:500; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:0 28px; color:#fff; background:#122a27; box-shadow:0 2px 12px #10252220; }
+    .brand { display:flex; align-items:center; gap:13px; min-width:0; }
+    .brand-mark { width:38px; height:38px; display:grid; place-items:center; color:#d6eee1; background:#28574b; border:1px solid #ffffff25; border-radius:12px; }
+    .brand-mark svg { width:22px; height:22px; }
+    .brand-title { margin:0; font-size:15px; line-height:1.25; letter-spacing:.01em; font-weight:700; }
+    .brand-subtitle { margin:4px 0 0; color:#a8c2b8; font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+    .header-tag { display:flex; align-items:center; gap:8px; color:#c8ded4; font-size:12px; white-space:nowrap; }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:#7ed3a4; box-shadow:0 0 0 4px #7ed3a422; }
+    main { min-height:0; display:grid; grid-template-columns:320px minmax(0,1fr); gap:16px; padding:16px; }
+    aside { overflow:auto; padding:21px 20px; background:var(--paper); border:1px solid var(--line); border-radius:15px; box-shadow:0 5px 20px #1c392a08; }
+    .eyebrow { margin:0 0 8px; color:var(--green); font-size:10px; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { margin:0; font-size:22px; letter-spacing:-.035em; line-height:1.2; }
+    .intro { margin:9px 0 20px; color:#71817b; font-size:12px; line-height:1.6; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:21px 0 11px; }
+    .section-head h2 { margin:0; font-size:12px; letter-spacing:.02em; }
+    .count { min-width:22px; padding:3px 7px; color:#61736b; background:#f1f5f2; border-radius:20px; font-size:10px; text-align:center; }
+    .layer-list { display:grid; gap:8px; }
+    .layer-card { display:grid; grid-template-columns:18px 24px minmax(0,1fr); align-items:center; gap:10px; min-height:58px; padding:10px; border:1px solid var(--line); border-radius:10px; cursor:pointer; transition:border-color .15s, background .15s; }
+    .layer-card:hover { border-color:#b9d4c5; background:#fbfdfb; }
+    .layer-card input { width:15px; height:15px; margin:0; accent-color:var(--green); cursor:pointer; }
+    .swatch { width:22px; height:22px; display:grid; place-items:center; }
+    .swatch svg { width:20px; height:20px; }
+    .layer-name { display:block; font-size:12px; font-weight:650; }
+    .layer-meta { display:block; margin-top:4px; color:#84928c; font-size:10px; }
+    .load-state { color:#8a9690; font-size:10px; text-align:right; }
+    .load-state.loading { color:#9b6c27; }
+    .load-state.ready { color:var(--green); }
+    .basemap-select { width:100%; height:39px; padding:0 10px; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:9px; font:inherit; font-size:12px; }
+    .hint { display:flex; gap:9px; margin-top:18px; padding:11px; color:#64776e; background:#f2f7f3; border-radius:9px; font-size:10px; line-height:1.5; }
+    .hint svg { flex:none; width:15px; height:15px; color:var(--green); }
+    .map-wrap { position:relative; min-height:0; overflow:hidden; background:#e7ece8; border:1px solid var(--line); border-radius:15px; box-shadow:0 5px 20px #1c392a08; }
+    #map { width:100%; height:100%; min-height:380px; background:#e7ece8; }
+    .map-caption { position:absolute; z-index:400; left:14px; bottom:13px; padding:7px 10px; color:#52645b; background:#ffffffeb; border:1px solid #dfe7e1; border-radius:8px; box-shadow:0 2px 8px #17312812; font-size:10px; pointer-events:none; }
+    .map-caption strong { color:#24483d; font-weight:700; }
+    .leaflet-control-attribution { font-size:9px !important; }
+    .leaflet-popup-content-wrapper { border-radius:10px; }
+    .popup-title { margin:0 0 8px; color:#23483c; font-size:13px; font-weight:700; }
+    .popup-row { display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; padding:4px 0; border-top:1px solid #edf0ed; font-size:11px; }
+    .popup-key { color:#75827b; }
+    .popup-value { overflow-wrap:anywhere; text-align:right; }
+    @media (max-width:760px) {
+      .app { height:auto; min-height:100%; grid-template-rows:64px 1fr; }
+      header { padding:0 16px; }
+      main { grid-template-columns:1fr; grid-template-rows:auto minmax(55vh, 1fr); padding:10px; gap:10px; }
+      aside { padding:17px; }
+      .intro { margin-bottom:12px; }
+      .section-head { margin-top:15px; }
+      .layer-list { grid-template-columns:1fr; }
+      .map-wrap { min-height:55vh; }
+      .header-tag { font-size:0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 6.5 8.5 4l7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20V6.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m8.5 4 .1 13.5M15.5 6.5V20M5.5 12l1.8-2 2 1.4 2.1-2.2 2.1.5 2-2.1 2.6.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><p class="brand-title">GeoPortal Minas Gerais</p><p class="brand-subtitle">Visualizador geográfico</p></div>
+      </div>
+      <div class="header-tag"><span class="live-dot"></span> Dados locais • SIRGAS 2000</div>
+    </header>
+    <main>
+      <aside aria-label="Painel de camadas">
+        <p class="eyebrow">Explorar o território</p>
+        <h1>Camadas do mapa</h1>
+        <p class="intro">Visualize os limites de Minas Gerais, sua rede hidrográfica e as rodovias em um mapa interativo.</p>
+        <div class="section-head"><h2>Camadas temáticas</h2><span class="count">3</span></div>
+        <div class="layer-list">
+          <label class="layer-card" for="layer-limit">
+            <input id="layer-limit" type="checkbox" checked>
+            <span class="swatch" style="color:#557c55"><svg viewBox="0 0 24 24" fill="none"><path d="m4 6 6-2 5 2 5-2v14l-5 2-5-2-6 2V6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7 9h2m3 5h2m2-6 2 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+            <span><span class="layer-name">Limite estadual</span><span class="layer-meta">Contorno de Minas Gerais</span></span><span id="state-limit" class="load-state">Carregando</span>
+          </label>
+          <label class="layer-card" for="layer-hydro">
+            <input id="layer-hydro" type="checkbox">
+            <span class="swatch" style="color:#3285b5"><svg viewBox="0 0 24 24" fill="none"><path d="M3 5c4 0 4 5 8 5s4-5 10-5M3 12c4 0 4 5 8 5s4-5 10-5M3 19c4 0 4-3 8-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <span><span class="layer-name">Hidrografia</span><span class="layer-meta">Cursos d'água • arquivo grande</span></span><span id="state-hydro" class="load-state">Sob demanda</span>
+          </label>
+          <label class="layer-card" for="layer-road">
+            <input id="layer-road" type="checkbox">
+            <span class="swatch" style="color:#d57843"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8l4 18H4L8 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m12 5-.4 3m-.5 4-.3 2m-.4 4-.2 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <span><span class="layer-name">Rodovias</span><span class="layer-meta">Sistema rodoviário • arquivo grande</span></span><span id="state-road" class="load-state">Sob demanda</span>
+          </label>
+        </div>
+        <div class="section-head"><h2>Mapa de fundo</h2></div>
+        <select class="basemap-select" id="basemap" aria-label="Escolher mapa de fundo">
+          <option value="osm">OpenStreetMap</option>
+          <option value="positron">CartoDB Positron</option>
+        </select>
+        <div class="hint"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5m0-8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Hidrografia e rodovias ocupam mais de 100 MB cada. A transferência começa quando você ativa a camada e os dados ficam disponíveis até fechar esta página.</span></div>
+      </aside>
+      <section class="map-wrap" aria-label="Mapa de Minas Gerais">
+        <div id="map"></div>
+        <div class="map-caption"><strong>Minas Gerais</strong> · Brasil</div>
+      </section>
+    </main>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([-18.5, -44.5], 6);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    const basemaps = {
+      osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }),
+      positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap &copy; <a href="https://carto.com/attributions">CARTO</a>' })
+    };
+    let activeBasemap = basemaps.osm.addTo(map);
+    document.getElementById('basemap').addEventListener('change', event => {
+      map.removeLayer(activeBasemap);
+      activeBasemap = basemaps[event.target.value].addTo(map);
+    });
+
+    const layerConfig = {
+      limit: { file: 'Limite_mg.geojson', color: '#557c55', weight: 2.4, fillColor: '#9bb67a', fillOpacity: 0.12 },
+      hydro: { file: 'Hidrografia_mg.geojson', color: '#3285b5', weight: 1.15, opacity: 0.76 },
+      road: { file: 'Rodovia_mg.geojson', color: '#d57843', weight: 1.35, opacity: 0.82 }
+    };
+    const layers = {};
+    const pending = {};
+    const names = { limit: 'Limite estadual', hydro: 'Hidrografia', road: 'Rodovias' };
+
+    function popupFor(feature, layer) {
+      const props = feature.properties || {};
+      const title = props.noriocomp || props.noespecif || props.nome || props.name || props.nom || names[feature.__layerKey] || 'Elemento geográfico';
+      const rows = Object.entries(props).filter(([, value]) => value !== null && value !== '').slice(0, 6)
+        .map(([key, value]) => `<div class="popup-row"><span class="popup-key">${escapeHtml(key)}</span><span class="popup-value">${escapeHtml(String(value))}</span></div>`).join('');
+      layer.bindPopup(`<div class="popup-title">${escapeHtml(String(title))}</div>${rows}`);
+    }
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+    }
+    function setState(key, text, className = '') {
+      const el = document.getElementById(`state-${key}`);
+      el.textContent = text;
+      el.className = `load-state ${className}`.trim();
+    }
+    async function loadLayer(key) {
+      if (layers[key]) return layers[key];
+      if (pending[key]) return pending[key];
+      pending[key] = (async () => {
+        setState(key, 'Carregando…', 'loading');
+        try {
+          const response = await fetch(`./Dados/geoJSON/${layerConfig[key].file}`);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          const config = layerConfig[key];
+          const geojson = L.geoJSON(data, {
+            style: () => config,
+            onEachFeature: (feature, layer) => {
+              feature.__layerKey = key;
+              popupFor(feature, layer);
+            }
+          });
+          layers[key] = geojson;
+          setState(key, 'Disponível', 'ready');
+          return geojson;
+        } catch (error) {
+          setState(key, 'Falha ao abrir');
+          console.error(`Erro ao carregar ${names[key]}:`, error);
+          alert(`Não foi possível carregar ${names[key]}. Abra o portal por um servidor web local e confira se o arquivo está em Dados/geoJSON.`);
+          throw error;
+        } finally {
+          delete pending[key];
+        }
+      })();
+      return pending[key];
+    }
+    async function toggleLayer(key, enabled) {
+      if (!enabled) {
+        if (layers[key] && map.hasLayer(layers[key])) map.removeLayer(layers[key]);
+        return;
+      }
+      try {
+        const layer = await loadLayer(key);
+        layer.addTo(map);
+        if (key === 'limit' && layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [24, 24] });
+      } catch (_) {
+        document.getElementById(`layer-${key}`).checked = false;
+      }
+    }
+    Object.keys(layerConfig).forEach(key => {
+      document.getElementById(`layer-${key}`).addEventListener('change', event => toggleLayer(key, event.target.checked));
+    });
+    toggleLayer('limit', true);
+  </script>
+</body>
+</html>
